@@ -31,34 +31,3 @@ exports.login = async (req,res) => {
         res.status(400).json({error: error.message})
     }
 }
-
-exports.getAllUsers = async (req,res) => {
-    const users = await User.find({}, '-password')
-    res.json(users)
-}
-exports.getUserById = async (req,res) => {
-    const { id } = req.params;
-    const user = await User.findById(id, '-password')
-    if(!user) return res.status(404).json({error: 'User not found'})
-    
-    if(req.user.role !== 'admin' && req.user.user !== user._id.toString()) return res.status(403).json({error: 'Permission denied'})
-    res.json(user)
-}
-exports.updateRole = async (req,res) => {
-    const { role } = req.user
-    const updated = await User.findByIdAndUpdate(
-        req.params.id,
-        {role},
-        {new:true}
-    ).select('-password')
-    res.json(updated)
-}
-exports.deleteUserById = async (req,res) => {
-    try {
-        const user = await User.findByIdAndDelete(req.params.id)
-        if(!user) return res.status(404).json({error: 'User does not exists'})
-        res.json({message: "User got deleted"})
-    } catch (error) {
-        res.status(500).json({error: error.message})
-    }
-}
