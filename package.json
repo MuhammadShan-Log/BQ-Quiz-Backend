@@ -18,5 +18,16 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MuhammadShan-Log/BQ-Quiz-Backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/MuhammadShan-Log/BQ-Quiz-Backend/issues"
+  },
+  "homepage": "https://github.com/MuhammadShan-Log/BQ-Quiz-Backend#readme",
+  "description": ""
 }
