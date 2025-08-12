@@ -12,7 +12,7 @@ const userSchema = mongoose.Schema({
         required: [true, "Phone is required."],
         unique: true
     },
-    email: {
+    email: { 
         type: String,
         required: [true, "Email is required."],
         unique: true
