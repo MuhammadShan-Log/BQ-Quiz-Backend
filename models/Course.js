@@ -28,7 +28,7 @@ const courseSchema = mongoose.Schema({
         required: [true, "Course createdby user is required."],
     },
     status: {
-        type: String,
+        type: Boolean,
         required: [true, "Course status is required."],
         default: true
     },
