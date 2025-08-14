@@ -7,6 +7,6 @@ exports.userValidation = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
     role: Joi.string().valid(...allowedLists).optional(),
-    enrollmentCourseID: Joi.string().optional(),
-    status:Joi.boolean()
+    enrollmentCourseID: Joi.string().optional().empty(''),
+    status: Joi.boolean()
 })

@@ -6,6 +6,6 @@ exports.courseValidation = Joi.object({
     courseCode: Joi.string().required(),
     timings: Joi.string().required(),
     days: Joi.string().required(),
-    createdBy: Joi.object().required(),
+    createdBy: Joi.string().length(24).hex().required(),
     status: Joi.boolean().required()
 })
