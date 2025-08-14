@@ -111,7 +111,7 @@ async function deleteCourseById(req, res, next) {
 module.exports = {
   getAllCourses,
   addNewCourse,
-  getCourseById,
+  getCourseById, 
   updateCourseById,
   deleteCourseById,
 };
