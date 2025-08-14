@@ -32,6 +32,10 @@ const courseSchema = mongoose.Schema({
         required: [true, "Course status is required."],
         default: true
     },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
 
 }, { timestamps: true })
 

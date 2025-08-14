@@ -26,9 +26,8 @@ const userSchema = mongoose.Schema({
         required: [true, "Password is required."]
     },
     enrollmentCourseID: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: 'Course',
-        default: []
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course',        
     },
     status: {
         type: Boolean,
