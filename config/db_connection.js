@@ -1,9 +1,8 @@
-const mongoose = require('mongoose')
-const debug = require('debug')("Development:DBConnection")
-mongoose.connect(process.env.MONGO_URI)
-.then(()=>debug('MongoDB connected successfully'))
-.catch(err=>console.error(err))
+const mongoose = require("mongoose");
 
-
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected successfully"))
+  .catch((err) => console.error(err));
 
 module.exports = mongoose.connection;
