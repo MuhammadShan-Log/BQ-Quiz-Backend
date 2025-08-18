@@ -1,5 +1,6 @@
+const { parse } = require("csv-parse");
 const Quiz = require("../models/QuizSechema");
-const fs = require("fs").promises;
+const fs = require("fs");
 
 exports.createQuiz = async (req, res) => {
   try {
@@ -13,19 +14,40 @@ exports.createQuiz = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const filedata = await fs.readFile(req.file.path, "utf-8");
-    console.log(filedata);
+    const questions = [];
+    const parser = fs
+      .createReadStream(req.file.path)
+      .pipe(parse({ columns: true, trim: true, delimiter: "," }));
 
-    // const { title, customQuestions } = req.body;
+    for await (const row of parser) {
+      questions.push({
+        questionText: row.questionText,
+        options: {
+          a: row.optionA,
+          b: row.optionB,
+          c: row.optionC,
+          d: row.optionD,
+        },
+        correctAnswer: row.correctAnswer,
+      });
+    }
 
-    // const quiz = await Quiz.create({
-    //   title,
-    //   questions,
-    //   customQuestions,
-    //   createdBy: req.user.id,
-    // });
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error("Failed to delete CSV:", err);
+    });
 
-    // res.status(201).json({ message: "Quiz created", quiz });
+    console.log("Parsed Questions:", questions);
+
+    const { title, customQuestions } = req.body;
+
+    const quiz = await Quiz.create({
+      title,
+      questions,
+      customQuestions,
+      createdBy: req.user.id,
+    });
+
+    res.status(201).json({ message: "Quiz created", quiz });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -34,7 +56,7 @@ exports.createQuiz = async (req, res) => {
 exports.getQuiz = async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.id).select(
-      "+questions.options -questions.correctAnswer"
+      "-questions.correctAnswer"
     );
 
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
