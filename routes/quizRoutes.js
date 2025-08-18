@@ -15,9 +15,9 @@ const router = express.Router();
 router.post("/quiz", protect, upload.single("file"), createQuiz);
 router.get("/quiz/:id", protect, getQuiz);
 
-router.put("/:id", protect, updateQuiz);
+router.put("/quiz/:id", protect, upload.single("file"), updateQuiz);
 
-router.delete("/:id", protect, deleteQuiz);
+router.delete("/quiz/:id", protect, deleteQuiz);
 
 router.post("/quiz/submit", protect, submitQuiz);
 
