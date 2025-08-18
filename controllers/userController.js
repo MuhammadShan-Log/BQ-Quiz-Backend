@@ -28,11 +28,11 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: "Email Already Registered!" });
     }
 
-    const data = await User.create(userData);
+    const user = await User.create(userData);
+    const data = user.toObject();
+    delete data.password;
 
-    data = {
-        delete: password
-    }
+    
     const token = generateToken(data._id, data.role);
 
     return res.status(201).json({ user: data, token });
