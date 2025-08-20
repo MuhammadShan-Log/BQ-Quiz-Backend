@@ -15,17 +15,15 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: "Email Already Registered!" });
     const user = await User.create({ name, phone, email, password, role });
     const token = generateToken(user._id, user.role);
-    return res
-      .status(201)
-      .json({
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-        token,
-      });
+    return res.status(201).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
@@ -33,7 +31,7 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user)
       return res.status(400).json({ error: "Invalid email OR password" });
@@ -50,6 +48,17 @@ exports.login = async (req, res) => {
       },
       token,
     });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+exports.getProfile = async (req, res) => {
+  try {
+    console.log(req.user);
+    
+    if (!req.user) return res.json({ error: "User Not Found!" });
+    res.json(req.user);
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
