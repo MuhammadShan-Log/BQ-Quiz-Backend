@@ -2,9 +2,11 @@ const express = require("express");
 
 const {
   createQuiz,
-  getQuiz,
   deleteQuiz,
   updateQuiz,
+  getAllQuizzes,
+  viewQuizTeachers,
+  getQuizForStudents,
 } = require("../controllers/quizController");
 const { submitQuiz } = require("../controllers/attemptController");
 const { protect } = require("../middlewares/authMiddleware");
@@ -12,13 +14,18 @@ const upload = require("../middlewares/uploadMiddleware");
 
 const router = express.Router();
 
+// For Teachers
+router.get("/quiz", protect, getAllQuizzes);
 router.post("/quiz", protect, upload.single("file"), createQuiz);
-router.get("/quiz/:id", protect, getQuiz);
+router.get("/quiz/:id", protect, viewQuizTeachers);
 
 router.put("/quiz/:id", protect, upload.single("file"), updateQuiz);
 
 router.delete("/quiz/:id", protect, deleteQuiz);
 
 router.post("/quiz/submit", protect, submitQuiz);
+
+// For Students
+// router.get("/quiz/:id", protect, getQuizForStudents);
 
 module.exports = router;

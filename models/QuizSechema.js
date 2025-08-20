@@ -9,7 +9,7 @@ const questionSchema = new mongoose.Schema({
     c: String,
     d: String,
   },
-  correctAnswer: { type: String, required: true, select: false },
+  correctAnswer: { type: String, required: true},
 });
 
 const quizSchema = new mongoose.Schema({

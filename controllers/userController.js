@@ -55,8 +55,6 @@ exports.login = async (req, res) => {
 
 exports.getProfile = async (req, res) => {
   try {
-    console.log(req.user);
-    
     if (!req.user) return res.json({ error: "User Not Found!" });
     res.json(req.user);
   } catch (error) {

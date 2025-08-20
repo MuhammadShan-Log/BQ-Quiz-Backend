@@ -1,6 +1,30 @@
 const Quiz = require("../models/QuizSechema");
 const parseCSVFile = require("../utils/parseCSVFile");
 
+exports.getAllQuizzes = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find({ createdBy: req.user.id });
+
+    if (!quizzes || quizzes.length === 0)
+      return res.status(404).json({ quizzes: "No quizzes found" });
+
+    res.json(quizzes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.viewQuizTeachers = async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+
+    res.json(quiz);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 exports.createQuiz = async (req, res) => {
   try {
     if (req.user.role !== "teacher")
@@ -32,9 +56,9 @@ exports.updateQuiz = async (req, res) => {
     if (req.user.role !== "teacher")
       return res
         .status(403)
-        .json({ message: "Only teacher can update quizzes" });
+        .json({ message: "Only teachers can update quizzes" });
 
-    const { title, customQuestions } = req.body;
+    const { title, questions, customQuestions } = req.body;
 
     const quiz = await Quiz.findById(req.params.id);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
@@ -46,30 +70,22 @@ exports.updateQuiz = async (req, res) => {
 
     if (title) quiz.title = title;
 
+    if (customQuestions) {
+      quiz.customQuestions = customQuestions.map((q) =>
+        typeof q === "string" ? q : JSON.stringify(q)
+      );
+    }
+
     if (req.file) {
-      const questions = await parseCSVFile(req.file.path);
+      const parsedQuestions = await parseCSVFile(req.file.path);
+      quiz.questions = parsedQuestions;
+    } else if (questions && Array.isArray(questions)) {
       quiz.questions = questions;
     }
 
-    if (customQuestions) quiz.customQuestions = customQuestions;
-
     await quiz.save();
 
-    res.json({ message: "Quiz updated", quiz });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-exports.getQuiz = async (req, res) => {
-  try {
-    const quiz = await Quiz.findById(req.params.id).select(
-      "-questions.correctAnswer"
-    );
-
-    if (!quiz) return res.status(404).json({ message: "Quiz not found" });
-
-    res.json(quiz);
+    res.json({ message: "Quiz updated successfully", quiz });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -96,6 +112,20 @@ exports.deleteQuiz = async (req, res) => {
     await quiz.deleteOne();
 
     res.json({ message: "Quiz deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getQuizForStudents = async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id).select(
+      "-questions.correctAnswer"
+    );
+
+    if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+
+    res.json(quiz);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
