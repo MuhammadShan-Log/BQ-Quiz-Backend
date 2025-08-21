@@ -26,6 +26,6 @@ router.delete("/quiz/:id", protect, deleteQuiz);
 router.post("/quiz/submit", protect, submitQuiz);
 
 // For Students
-// router.get("/quiz/:id", protect, getQuizForStudents);
+router.get("/quiz/:id/start", protect, getQuizForStudents);
 
 module.exports = router;
