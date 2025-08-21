@@ -36,7 +36,22 @@ exports.createQuiz = async (req, res) => {
 
     const questions = await parseCSVFile(req.file.path);
 
-    const { title, customQuestions } = req.body;
+    let { title, customQuestions } = req.body;
+
+    if (customQuestions) {
+      if (typeof customQuestions === "string") {
+        try {
+          customQuestions = JSON.parse(customQuestions);
+        } catch {
+          customQuestions = [customQuestions]; // fallback: wrap in array
+        }
+      }
+      if (!Array.isArray(customQuestions)) customQuestions = [customQuestions];
+
+      customQuestions = customQuestions.map((q) =>
+        typeof q === "string" ? q : JSON.stringify(q)
+      );
+    }
 
     const quiz = await Quiz.create({
       title,
@@ -58,7 +73,7 @@ exports.updateQuiz = async (req, res) => {
         .status(403)
         .json({ message: "Only teachers can update quizzes" });
 
-    const { title, questions, customQuestions } = req.body;
+    let { title, questions, customQuestions } = req.body;
 
     const quiz = await Quiz.findById(req.params.id);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
@@ -71,6 +86,15 @@ exports.updateQuiz = async (req, res) => {
     if (title) quiz.title = title;
 
     if (customQuestions) {
+      if (typeof customQuestions === "string") {
+        try {
+          customQuestions = JSON.parse(customQuestions);
+        } catch {
+          customQuestions = [customQuestions];
+        }
+      }
+      if (!Array.isArray(customQuestions)) customQuestions = [customQuestions];
+
       quiz.customQuestions = customQuestions.map((q) =>
         typeof q === "string" ? q : JSON.stringify(q)
       );
@@ -79,8 +103,17 @@ exports.updateQuiz = async (req, res) => {
     if (req.file) {
       const parsedQuestions = await parseCSVFile(req.file.path);
       quiz.questions = parsedQuestions;
-    } else if (questions && Array.isArray(questions)) {
-      quiz.questions = questions;
+    } else if (questions) {
+      if (typeof questions === "string") {
+        try {
+          questions = JSON.parse(questions);
+        } catch {
+          questions = [];
+        }
+      }
+      if (Array.isArray(questions)) {
+        quiz.questions = questions;
+      }
     }
 
     await quiz.save();
