@@ -9,14 +9,17 @@ const questionSchema = new mongoose.Schema({
     c: String,
     d: String,
   },
-  correctAnswer: { type: String, required: true},
+  correctAnswer: { type: String, required: true },
 });
 
-const quizSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  questions: [questionSchema],
-  customQuestions: [{ type: String }],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // teacher id
-});
+const quizSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    questions: [questionSchema],
+    customQuestions: [{ type: String }],
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // teacher id
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("Quiz", quizSchema);
