@@ -6,6 +6,7 @@ const debug = require("debug")("Development:Server");
 const authRoutes = require("./routes/userRoute");
 const courseRoutes = require("./routes/courseRoute");
 const quizRoutes = require("./routes/quizRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 require("./config/db_connection");
 
 app.use(express.json());
@@ -14,6 +15,7 @@ app.use(cors());
 app.use("/auth", authRoutes);
 app.use("/course", courseRoutes);
 app.use("/quizzes", quizRoutes);
+app.use("/dashboard", dashboardRoutes);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
