@@ -85,4 +85,31 @@ exports.getStudentWithCourse = async (req, res) => {
   }
 }
 
+// FOR FETCHING ALL STUDENTS TO ADMIN PAGE
+exports.getAllStudents = async (req, res) => {
+  try {
+    const students = await User.find({ role: "student" })
+    return res.json({
+      status: 200,
+      data: students,
+      error: null
+    })
+  } catch (error) {
+    return res.status(500).json({ error: error.message })
+  }
+}
+
+// FOR FETCHING ALL TEACHERS TO ADMIN PAGE
+exports.getAllTeachers = async (req, res) => {
+  try {
+    const teachers = await User.find({ role: "teacher" })
+    return res.json({
+      status: 200,
+      data: teachers,
+      error: null
+    })
+  } catch (error) {
+    return res.status(500).json({ error: error.message })
+  }
+}
 

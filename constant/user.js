@@ -1,1 +1,1 @@
-module.exports = ['teacher', 'student']
+module.exports = ['teacher', 'student', 'admin']
