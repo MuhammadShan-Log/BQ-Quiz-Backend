@@ -1,7 +1,9 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
+const { string } = require('joi')
 
 const userSchema = mongoose.Schema({
+ 
     name: {
         type: String,
         required: [true, "Name is required."]
@@ -11,7 +13,7 @@ const userSchema = mongoose.Schema({
         required: [true, "Phone is required."],
         unique: true
     },
-    email: { 
+    email: {
         type: String,
         required: [true, "Email is required."],
         unique: true
@@ -26,9 +28,13 @@ const userSchema = mongoose.Schema({
         required: [true, "Password is required."]
     },
     enrollmentCourseID: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Course',        
+        type: String,
+        default: null
     },
+    // enrollmentCourseID: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'Course',        
+    // }
     status: {
         type: Boolean,
         default: true

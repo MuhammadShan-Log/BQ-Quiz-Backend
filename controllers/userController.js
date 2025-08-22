@@ -9,18 +9,20 @@ const generateToken = (userId, role) => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, phone, email, password, role } = req.body;
+    const { name, phone, email, password, role, enrollmentCourseID } = req.body;
     const existUser = await User.findOne({ email });
     if (existUser)
       return res.status(400).json({ error: "Email Already Registered!" });
-    const user = await User.create({ name, phone, email, password, role });
+    const user = await User.create({ name, phone, email, password, role, enrollmentCourseID });
     const token = generateToken(user._id, user.role);
     return res.status(201).json({
       user: {
         id: user._id,
+    
         name: user.name,
         email: user.email,
         role: user.role,
+        enrollmentCourseID: user.enrollmentCourseID
       },
       token,
     });
@@ -61,3 +63,26 @@ exports.getProfile = async (req, res) => {
     return res.status(400).json({ error: error.message });
   }
 };
+
+
+
+exports.getStudentWithCourse = async (req, res) => {
+  try {
+    const userId = req.params.id; // frontend se bhejna hoga
+    const student = await User.findById(userId).populate("enrollmentCourseID");
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    return res.json({
+      status: 200,
+      data: student,
+      error: null
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Server error" });
+  }
+}
+
+
