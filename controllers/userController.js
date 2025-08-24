@@ -113,3 +113,23 @@ exports.getAllTeachers = async (req, res) => {
   }
 }
 
+// FOR FETCHING ALL USERS BY ROLE
+exports.getUsersByRole = async (req, res) => {
+  try {
+    const { role } = req.params;
+    
+    if (!['student', 'teacher', 'admin'].includes(role)) {
+      return res.status(400).json({ error: "Invalid role specified" });
+    }
+    
+    const users = await User.find({ role: role })
+    return res.json({
+      status: 200,
+      data: users,
+      error: null
+    })
+  } catch (error) {
+    return res.status(500).json({ error: error.message })
+  }
+}
+

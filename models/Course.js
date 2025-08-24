@@ -28,6 +28,11 @@ const courseSchema = mongoose.Schema({
         ref: 'User',
         required: [true, "Course createdby user is required."],
     },
+    teacher: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
     status: {
         type: Boolean,
         required: [true, "Course status is required."],
@@ -41,5 +46,4 @@ const courseSchema = mongoose.Schema({
 }, { timestamps: true })
 
 const courseModel = mongoose.model('Course', courseSchema)
-
 module.exports = courseModel
