@@ -12,7 +12,7 @@ router.get('/profile', protect, getProfile)
 router.get("/:id", getStudentWithCourse);
 
 // FOR TEACHERS AND STUDENTS (Admin only)
-router.get('/users/students', protect, authMiddleware(['admin']), getAllStudents)
+router.get('/users/students', protect, authMiddleware(['admin', 'teacher']), getAllStudents)
 router.get('/users/teachers', protect, authMiddleware(['admin']), getAllTeachers)
 router.get('/users/role/:role', protect, authMiddleware(['admin']), getUsersByRole)
 
