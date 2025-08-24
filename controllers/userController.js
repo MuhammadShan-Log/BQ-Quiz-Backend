@@ -18,7 +18,6 @@ exports.register = async (req, res) => {
     return res.status(201).json({
       user: {
         id: user._id,
-    
         name: user.name,
         email: user.email,
         role: user.role,
@@ -88,7 +87,11 @@ exports.getStudentWithCourse = async (req, res) => {
 // FOR FETCHING ALL STUDENTS TO ADMIN PAGE
 exports.getAllStudents = async (req, res) => {
   try {
-    const students = await User.find({ role: "student" })
+    let filter = { role: "student" }
+    if (req.user.role === "teacher"){
+      filter.enrollmentCourseID = req.user.enrollmentCourseID
+    }
+    const students = await User.find(filter)
     return res.json({
       status: 200,
       data: students,
@@ -103,11 +106,7 @@ exports.getAllStudents = async (req, res) => {
 exports.getAllTeachers = async (req, res) => {
   try {
     const teachers = await User.find({ role: "teacher" })
-    return res.json({
-      status: 200,
-      data: teachers,
-      error: null
-    })
+    return res.json(teachers)
   } catch (error) {
     return res.status(500).json({ error: error.message })
   }

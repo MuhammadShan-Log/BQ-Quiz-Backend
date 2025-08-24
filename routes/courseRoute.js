@@ -18,16 +18,13 @@ const { protect, authMiddleware } = require('../middlewares/authMiddleware')
 const router = express.Router()
 
 // Public routes
-router.route('/')
-    .get(getAllCourses)
-    .post(validate(courseValidation), addNewCourse)
-
-// Course listing route for frontend
+router.post("/",protect, validate(courseValidation), addNewCourse)
+router.get('/', protect, getAllCourses)
 router.get('/list', getAllCourses)
 
 router.route('/:id')
     .get(getCourseById)
-    .post(updateCourseById)
+    .put(updateCourseById)
     .patch(deleteCourseById)
 
 // Admin routes for course assignment
