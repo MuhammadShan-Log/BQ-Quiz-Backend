@@ -1,122 +1,72 @@
 const Quiz = require("../models/QuizSechema");
-const Enrolment = require("../models/Enrolment");
+const Enrolment = require("../models/Enrollment");
 const Course = require("../models/Course");
 
-exports.getTeacherOverview = async (req, res) => {
+exports.getTeacherStats = async (req, res) => {
   try {
     if (req.user.role !== "teacher") {
-      return res
-        .status(403)
-        .json({ message: "Only teachers can access this resource" });
+      return res.status(403).json({ message: "Only teachers can access this resource" });
     }
 
     const teacherId = req.user.id;
 
-    const quizCount = await Quiz.countDocuments({ createdBy: teacherId });
-
+    const totalQuizzes = await Quiz.countDocuments({ createdBy: teacherId });
     const quizzes = await Quiz.find({ createdBy: teacherId });
 
-    // count both normal questions and custom questions
-    const questionCount = quizzes.reduce((acc, quiz) => {
-      const normalQs = quiz.questions?.length || 0;
-      const customQs = quiz.customQuestions?.length || 0;
-      return acc + normalQs + customQs;
-    }, 0);
+    const totalCourses = await Course.countDocuments({ teacher: teacherId });
 
-    // Get course statistics
-    const courseCount = await Course.countDocuments({ teacher: teacherId });
-    const studentCount = await Enrolment.countDocuments({ teacher: teacherId });
+    const teacherCourses = await Course.find({ teacher: teacherId }).select("_id");
+    const courseIds = teacherCourses.map(c => c._id);
+    const totalStudents = await Enrolment.countDocuments({ course: { $in: courseIds } });
 
     res.json({
-      quizCount,
-      questionCount,
-      courseCount,
-      studentCount
+      totalCourses,
+      totalStudents,
+      totalQuizzes,
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching teacher stats", error });
   }
 };
 
-exports.getRecentQuizzes = async (req, res) => {
+exports.getStudentDashboard = async (req, res) => {
   try {
-    if (req.user.role !== "teacher") {
-      return res
-        .status(403)
-        .json({ message: "Only teachers can access this resource" });
-    }
+    const studentId = req.user._id;
 
-    const teacherId = req.user.id;
+    const enrolments = await Enrolment.find({ student: studentId }).populate("course");
+    const quizzes = await Quiz.find({ course: { $in: enrolments.map(e => e.course._id) } });
 
-    const recentQuizzes = await Quiz.find({ createdBy: teacherId })
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    res.json(recentQuizzes);
+    res.json({
+      status: 200,
+      data: {
+        enrolledCourses: enrolments.length,
+        attemptedQuizzes: quizzes.length,
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching recent quizzes", error });
+    res.status(500).json({ status: 500, error: error.message });
   }
 };
 
-// Get student overview
-exports.getStudentOverview = async (req, res) => {
+exports.getAdminDashboard = async (req, res) => {
   try {
-    if (req.user.role !== "student") {
-      return res
-        .status(403)
-        .json({ message: "Only students can access this resource" });
-    }
-
-    const studentId = req.user.id;
-
-    // Get enrolled courses count
-    const enrolledCoursesCount = await Enrolment.countDocuments({ 
-      student: studentId, 
-      status: 'active' 
-    });
-
-    // Get recent enrollments
-    const recentEnrollments = await Enrolment.find({ student: studentId })
-      .populate('course', 'courseName courseCode')
-      .populate('teacher', 'name')
-      .sort({ enrollmentDate: -1 })
-      .limit(5);
+    const totalCourses = await Course.countDocuments({ isDeleted: false });
+    const totalStudents = await User.countDocuments({ role: "student" });
+    const totalTeachers = await User.countDocuments({ role: "teacher" });
+    const totalEnrolments = await Enrolment.countDocuments();
+    const totalQuizzes = await Quiz.countDocuments();
 
     res.json({
-      enrolledCoursesCount,
-      recentEnrollments
+      status: 200,
+      data: {
+        totalCourses,
+        totalStudents,
+        totalTeachers,
+        totalEnrolments,
+        totalQuizzes
+      }
     });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching student stats", error });
-  }
-};
-
-// Get admin overview
-exports.getAdminOverview = async (req, res) => {
-  try {
-    if (req.user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Only admins can access this resource" });
-    }
-
-    // Get total counts
-    const totalStudents = await Enrolment.distinct('student').countDocuments();
-    const totalTeachers = await Course.distinct('teacher').countDocuments();
-    const totalCourses = await Course.countDocuments();
-    const totalEnrollments = await Enrolment.countDocuments();
-
-    // Get courses without teachers
-    const coursesWithoutTeachers = await Course.countDocuments({ teacher: null });
-
-    res.json({
-      totalStudents,
-      totalTeachers,
-      totalCourses,
-      totalEnrollments,
-      coursesWithoutTeachers
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching admin stats", error });
+    res.status(500).json({ status: 500, error: error.message });
   }
 };

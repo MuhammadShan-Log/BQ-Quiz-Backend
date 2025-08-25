@@ -1,6 +1,5 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
-const { string } = require('joi')
 
 const userSchema = mongoose.Schema({
  
@@ -27,14 +26,6 @@ const userSchema = mongoose.Schema({
         type: String,
         required: [true, "Password is required."]
     },
-    enrollmentCourseID: {
-        type: String,
-        default: null
-    },
-    // enrollmentCourseID: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'Course',        
-    // }
     status: {
         type: Boolean,
         default: true
