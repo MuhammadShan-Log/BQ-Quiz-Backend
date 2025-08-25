@@ -102,13 +102,12 @@ async function assignTeacherToCourse(req, res) {
   try {
     const { courseId, teacherId } = req.body;
     const course = await courseModel.findById(courseId);
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(teacherId)) {
+      return res.status(400).json({ error: "Invalid courseId or teacherId" });
+    }
     if (!course) return res.status(404).json({ error: "Course Not Found!" });
 
-    await User.findByIdAndUpdate(
-      teacherId,
-      { enrollmentCourseID: courseId },
-      { new: true }
-    );
 
     course.teacher = teacherId;
     await course.save();

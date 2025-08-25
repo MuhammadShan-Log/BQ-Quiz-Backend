@@ -29,3 +29,4 @@ router.post("/quiz/submit", protect, submitQuiz);
 router.get("/quiz/:id/start", protect, getQuizForStudents);
 
 module.exports = router;
+

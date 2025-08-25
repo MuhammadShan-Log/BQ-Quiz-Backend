@@ -1,4 +1,3 @@
-
 const Attempt = require("../models/Attempt");
 const Quiz = require("../models/QuizSechema");
 
@@ -30,6 +29,27 @@ exports.submitQuiz = async (req, res) => {
     });
 
     res.json({ message: "Quiz submitted", score, total: quiz.questions.length });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+exports.getAttemptsForTeacher = async (req, res) => {
+  try {
+    if (req.user.role !== "teacher") {
+      return res.status(403).json({ message: "Only teachers can view results" });
+    }
+
+    // saare quizzes jo teacher ne banaye
+    const quizzes = await Quiz.find({ createdBy: req.user.id });
+    const quizIds = quizzes.map(q => q._id);
+
+    const attempts = await Attempt.find({ quizId: { $in: quizIds } })
+      .populate("studentId", "name email")
+      .populate("quizId", "title");
+
+    res.json({ attempts });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
