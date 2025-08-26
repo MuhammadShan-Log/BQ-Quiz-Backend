@@ -105,6 +105,7 @@ async function assignTeacherToCourse(req, res) {
   try {
     const { courseId, teacherId } = req.body;
 
+    // Validate IDs FIRST to avoid cast errors
     if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(teacherId)) {
       return res.status(400).json({ error: "Invalid courseId or teacherId" });
     }

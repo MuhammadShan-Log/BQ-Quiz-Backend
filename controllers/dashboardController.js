@@ -2,6 +2,7 @@ const Quiz = require("../models/QuizSechema");
 const Enrolment = require("../models/Enrollment");
 const Course = require("../models/Course");
 const User = require("../models/User");
+const Attempt = require("../models/Attempt");
 
 exports.getTeacherStats = async (req, res) => {
   try {
@@ -35,13 +36,13 @@ exports.getStudentDashboard = async (req, res) => {
     const studentId = req.user._id;
 
     const enrolments = await Enrolment.find({ student: studentId }).populate("course");
-    const quizzes = await Quiz.find({ course: { $in: enrolments.map(e => e.course._id) } });
+    const attemptedQuizzes = await Attempt.countDocuments({ student: studentId });
 
     res.json({
       status: 200,
       data: {
         enrolledCourses: enrolments.length,
-        attemptedQuizzes: quizzes.length,
+        attemptedQuizzes,
       }
     });
   } catch (error) {

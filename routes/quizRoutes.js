@@ -8,8 +8,8 @@ const {
   viewQuizTeachers,
   getQuizForStudents,
 } = require("../controllers/quizController");
-const { submitQuiz } = require("../controllers/attemptController");
-const { protect } = require("../middlewares/authMiddleware");
+const { submitQuiz, getAttemptsForTeacher } = require("../controllers/attemptController");
+const { protect, authMiddleware } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/uploadMiddleware");
 
 const router = express.Router();
@@ -24,6 +24,7 @@ router.put("/quiz/:id", protect, upload.single("file"), updateQuiz);
 router.delete("/quiz/:id", protect, deleteQuiz);
 
 router.post("/quiz/submit", protect, submitQuiz);
+router.get("/quiz/attempts", protect, authMiddleware(['teacher']), getAttemptsForTeacher);
 
 // For Students
 router.get("/quiz/:id/start", protect, getQuizForStudents);

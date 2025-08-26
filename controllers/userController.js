@@ -18,6 +18,7 @@ exports.register = async (req, res) => {
 
     const user = await User.create({ name, phone, email, password, role });
 
+    // Auto-enroll student if course selected at signup
     if (user.role === "student" && enrollmentCourseID) {
       const course = await Course.findById(enrollmentCourseID);
       if (!course) {

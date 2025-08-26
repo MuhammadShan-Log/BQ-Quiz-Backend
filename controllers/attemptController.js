@@ -1,5 +1,6 @@
 const Attempt = require("../models/Attempt");
 const Quiz = require("../models/QuizSechema");
+const mongoose = require("mongoose");
 
 exports.submitQuiz = async (req, res) => {
   try {
@@ -9,28 +10,42 @@ exports.submitQuiz = async (req, res) => {
 
     const { quizId, answers } = req.body;
 
-    const quiz = await Quiz.findById(quizId).select("+questions.correctAnswer");
+    if (!quizId || !Array.isArray(answers)) {
+      return res.status(400).json({ message: "quizId and answers are required" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(quizId)) {
+      return res.status(400).json({ message: "Invalid quizId" });
+    }
 
+    const quiz = await Quiz.findById(quizId);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
+    const correctById = new Map(
+      (quiz.questions || []).map((q) => [String(q._id), q.correctAnswer])
+    );
+
     let score = 0;
-    answers.forEach(ans => {
-      const question = quiz.questions.id(ans.questionId);
-      if (question && question.correctAnswer === ans.selectedOption) {
+    for (const ans of answers) {
+      const qid = String(ans?.questionId || "");
+      const selected = ans?.selectedOption;
+      const correct = correctById.get(qid);
+      if (typeof selected === "string" && typeof correct === "string" && selected === correct) {
         score++;
       }
-    });
+    }
 
-    const attempt = await Attempt.create({
-      quizId,
-      studentId: req.user.id,
+    await Attempt.create({
+      quiz: quizId,
+      student: req.user.id,
       answers,
-      score
+      score,
     });
+    
 
-    res.json({ message: "Quiz submitted", score, total: quiz.questions.length });
+    return res.json({ message: "Quiz submitted", score, total: quiz.questions.length });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("submitQuiz error:", err);
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -41,16 +56,27 @@ exports.getAttemptsForTeacher = async (req, res) => {
       return res.status(403).json({ message: "Only teachers can view results" });
     }
 
-    // saare quizzes jo teacher ne banaye
-    const quizzes = await Quiz.find({ createdBy: req.user.id });
+    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+      return res.status(400).json({ message: "Invalid teacher id" });
+    }
+
+    const teacherObjectId = new mongoose.Types.ObjectId(req.user.id);
+
+    const quizzes = await Quiz.find({ createdBy: teacherObjectId }).select("_id");
     const quizIds = quizzes.map(q => q._id);
 
-    const attempts = await Attempt.find({ quizId: { $in: quizIds } })
-      .populate("studentId", "name email")
-      .populate("quizId", "title");
+    if (quizIds.length === 0) {
+      return res.json({ attempts: [] });
+    }
 
-    res.json({ attempts });
+    const attempts = await Attempt.find({ quiz: { $in: quizIds } })
+      .populate({ path: "quiz", select: "title createdBy" })
+      .populate("student", "name email")
+      .lean();
+
+    return res.json({ attempts });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("getAttemptsForTeacher error:", err);
+    return res.status(500).json({ message: err.message });
   }
 };
