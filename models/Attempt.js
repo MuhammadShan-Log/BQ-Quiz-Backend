@@ -21,8 +21,8 @@
 const mongoose = require("mongoose");
 
 const attemptSchema = mongoose.Schema({
-  student: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  quiz: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz", required: true },
+  studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  quizId: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz", required: true },
   answers: [
     {
       questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz.questions" },

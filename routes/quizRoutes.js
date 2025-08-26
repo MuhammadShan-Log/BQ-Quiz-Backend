@@ -17,6 +17,7 @@ const router = express.Router();
 // For Teachers
 router.get("/quiz", protect, getAllQuizzes);
 router.post("/quiz", protect, upload.single("file"), createQuiz);
+router.get("/quiz/attempts", protect, authMiddleware(['teacher']), getAttemptsForTeacher);
 router.get("/quiz/:id", protect, viewQuizTeachers);
 
 router.put("/quiz/:id", protect, upload.single("file"), updateQuiz);
@@ -24,7 +25,6 @@ router.put("/quiz/:id", protect, upload.single("file"), updateQuiz);
 router.delete("/quiz/:id", protect, deleteQuiz);
 
 router.post("/quiz/submit", protect, submitQuiz);
-router.get("/quiz/attempts", protect, authMiddleware(['teacher']), getAttemptsForTeacher);
 
 // For Students
 router.get("/quiz/:id/start", protect, getQuizForStudents);

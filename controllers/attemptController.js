@@ -69,9 +69,9 @@ exports.getAttemptsForTeacher = async (req, res) => {
       return res.json({ attempts: [] });
     }
 
-    const attempts = await Attempt.find({ quiz: { $in: quizIds } })
-      .populate({ path: "quiz", select: "title createdBy" })
-      .populate("student", "name email")
+    const attempts = await Attempt.find({ quizId: { $in: quizIds } })
+      .populate({ path: "quizId", select: "title createdBy" })
+      .populate("studentId", "name email")
       .lean();
 
     return res.json({ attempts });
