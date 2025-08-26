@@ -104,24 +104,30 @@ async function deleteCourseById(req, res) {
 async function assignTeacherToCourse(req, res) {
   try {
     const { courseId, teacherId } = req.body;
-    const course = await courseModel.findById(courseId);
-    // Validate IDs
+
     if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(teacherId)) {
       return res.status(400).json({ error: "Invalid courseId or teacherId" });
     }
-    if (!course) return res.status(404).json({ error: "Course Not Found!" });
+
+    const exists = await courseModel.exists({ _id: courseId });
+    if (!exists) return res.status(404).json({ error: "Course Not Found!" });
 
     const teacher = await User.findById(teacherId);
     if (!teacher || teacher.role !== "teacher") {
       return res.status(400).json({ error: "Invalid teacher ID or user is not a teacher." });
     }
 
-    course.teacher = teacherId;
-    await course.save();
+    // Atomic update without triggering full validation on unrelated required fields
+    const updated = await courseModel.findByIdAndUpdate(
+      courseId,
+      { $set: { teacher: teacherId } },
+      { new: true, runValidators: false }
+    ).populate("teacher", "name email");
 
-    res.json({ message: "Course assigned successfully", course });
+    return res.json({ message: "Course assigned successfully", course: updated });
   } catch (error) {
-    return res.status(500).json({ status: 500, error: "Server error." });
+    console.error("assignTeacherToCourse error:", error);
+    return res.status(500).json({ status: 500, error: error.message || "Server error." });
   }
 }
 

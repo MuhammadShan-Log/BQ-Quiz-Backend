@@ -1,5 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const Enrollment = require("../models/Enrollment");
+const Course = require("../models/Course");
 
 const generateToken = (userId, role) => {
   return jwt.sign({ id: userId, role }, process.env.SECRET, {
@@ -13,7 +15,26 @@ exports.register = async (req, res) => {
     const existUser = await User.findOne({ email });
     if (existUser)
       return res.status(400).json({ error: "Email Already Registered!" });
-    const user = await User.create({ name, phone, email, password, role, enrollmentCourseID });
+
+    const user = await User.create({ name, phone, email, password, role });
+
+    if (user.role === "student" && enrollmentCourseID) {
+      const course = await Course.findById(enrollmentCourseID);
+      if (!course) {
+        return res.status(400).json({ error: "Selected course not found." });
+      }
+      if (!course.teacher) {
+        return res.status(400).json({ error: "Course must have a teacher assigned before enrollment." });
+      }
+
+      // Create enrollment if not already exists (unique index also protects)
+      await Enrollment.create({
+        student: user._id,
+        course: course._id,
+        teacher: course.teacher,
+      });
+    }
+
     const token = generateToken(user._id, user.role);
     return res.status(201).json({
       user: {
@@ -21,9 +42,10 @@ exports.register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        enrollmentCourseID: user.enrollmentCourseID
       },
       token,
+      success: true,
+      message: "Registration successful",
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });

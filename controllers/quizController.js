@@ -1,16 +1,26 @@
 const Quiz = require("../models/QuizSechema");
 const parseCSVFile = require("../utils/parseCSVFile");
+const Enrollment = require("../models/Enrollment");
 
 exports.getAllQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ createdBy: req.user.id });
+    let filter = {};
 
-    if (!quizzes || quizzes.length === 0)
-      return res.status(404).json({ quizzes: "No quizzes found" });
+    if (req.user.role === "teacher") {
+      filter.createdBy = req.user.id;
+    } else if (req.user.role === "student") {
+      const enrollments = await Enrollment.find({ student: req.user._id }).select("teacher");
+      const teacherIds = enrollments.map((e) => e.teacher).filter(Boolean);
+      if (teacherIds.length === 0) {
+        return res.json([]);
+      }
+      filter.createdBy = { $in: teacherIds };
+    }
 
-    res.json(quizzes);
+    const quizzes = await Quiz.find(filter);
+    return res.json(quizzes);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };
 
