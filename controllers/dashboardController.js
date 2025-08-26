@@ -1,6 +1,7 @@
 const Quiz = require("../models/QuizSechema");
 const Enrolment = require("../models/Enrollment");
 const Course = require("../models/Course");
+const User = require("../models/User");
 
 exports.getTeacherStats = async (req, res) => {
   try {

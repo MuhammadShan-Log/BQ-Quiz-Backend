@@ -33,6 +33,13 @@ const courseSchema = mongoose.Schema({
         ref: 'User',
         default: null
     },
+
+    students: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    ],
     status: {
         type: Boolean,
         required: [true, "Course status is required."],

@@ -7,6 +7,7 @@ const authRoutes = require("./routes/userRoute");
 const courseRoutes = require("./routes/courseRoute");
 const quizRoutes = require("./routes/quizRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+
 require("./config/db_connection");
 
 app.use(express.json());
