@@ -35,8 +35,8 @@ exports.submitQuiz = async (req, res) => {
     }
 
     await Attempt.create({
-      quiz: quizId,
-      student: req.user.id,
+      quizId: quizId,
+      studentId: req.user._id,
       answers,
       score,
     });
