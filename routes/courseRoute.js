@@ -32,7 +32,7 @@ router.post('/assign-teacher', protect, authMiddleware(['admin']), assignTeacher
 router.post('/assign-student', protect, authMiddleware(['admin']), assignStudentToCourse)
 
 // Teacher routes
-router.get('/teacher/students', protect, authMiddleware(['teacher']), getTeacherStudents)
+router.get('/teacher/getstudents', protect, authMiddleware(['teacher']), getTeacherStudents)
 router.get('/teacher/courses', protect, authMiddleware(['teacher']), getCoursesByTeacher)
 
 // Student routes

@@ -1,7 +1,6 @@
 // controllers/course.controller.js
 const courseModel = require("../models/Course");
-const TeacherCourse = require("../models/TeacherCourse");
-const Enrolment = require("../models/Enrolment");
+const Enrollment = require("../models/Enrollment");
 const User = require("../models/User");
 const { default: mongoose } = require("mongoose");
 
@@ -82,12 +81,16 @@ async function updateCourseById(req, res) {
 
 async function deleteCourseById(req, res) {
   try {
-    const data = await courseModel.findByIdAndDelete(req.params.id);
+    const data = await courseModel.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: true },
+      { new: true }
+    );
     if (!data)
       return res.status(404).json({ status: 404, error: "Course not found." });
     return res.status(200).json({
       status: 200,
-      message: "Course deleted successfully.",
+      message: "Course deleted successfully (soft delete).",
       data,
       error: null,
     });
@@ -108,11 +111,15 @@ async function assignTeacherToCourse(req, res) {
     }
     if (!course) return res.status(404).json({ error: "Course Not Found!" });
 
+    const teacher = await User.findById(teacherId);
+    if (!teacher || teacher.role !== "teacher") {
+      return res.status(400).json({ error: "Invalid teacher ID or user is not a teacher." });
+    }
 
     course.teacher = teacherId;
     await course.save();
 
-    res.json({ message: "course Assigned successfully", course });
+    res.json({ message: "Course assigned successfully", course });
   } catch (error) {
     return res.status(500).json({ status: 500, error: "Server error." });
   }
@@ -121,7 +128,7 @@ async function assignTeacherToCourse(req, res) {
 // Assign student to course (Admin only)
 async function assignStudentToCourse(req, res) {
   try {
-    const { studentId, courseId } = req.body;
+    const { studentId, courseId, campusId } = req.body;
 
     const course = await courseModel.findById(courseId);
     if (!course) {
@@ -143,28 +150,35 @@ async function assignStudentToCourse(req, res) {
       });
     }
 
-    if (
-      student.enrollmentCourseID &&
-      student.enrollmentCourseID.toString() === courseId.toString()
-    ) {
+    // Check if already enrolled
+    const existingEnrollment = await Enrollment.findOne({
+      student: studentId,
+      course: courseId,
+    });
+    if (existingEnrollment) {
       return res.status(400).json({
         status: 400,
         error: "Student is already enrolled in this course.",
       });
     }
 
-    student.enrollmentCourseID = courseId;
-    await student.save();
+    // Create enrollment
+    const enrollment = await Enrollment.create({
+      student: studentId,
+      course: courseId,
+      teacher: course.teacher,
+      // campus: campusId || null,
+    });
 
     return res.status(200).json({
       status: 200,
       message: "Student enrolled to course successfully.",
-      data: student,
+      data: enrollment,
       error: null,
     });
   } catch (error) {
     console.error("assignStudentToCourse error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ status: 500, error: error.message });
   }
 }
 
@@ -172,7 +186,7 @@ async function assignStudentToCourse(req, res) {
 async function studentSelfRegistration(req, res) {
   try {
     const { courseId, campusId } = req.body;
-    const studentId = req.user.id;
+    const studentId = req.user._id;
 
     const course = await courseModel.findById(courseId);
     if (!course)
@@ -185,7 +199,7 @@ async function studentSelfRegistration(req, res) {
       });
     }
 
-    const existingEnrollment = await Enrolment.findOne({
+    const existingEnrollment = await Enrollment.findOne({
       student: studentId,
       course: courseId,
     });
@@ -196,7 +210,7 @@ async function studentSelfRegistration(req, res) {
       });
     }
 
-    const enrollment = await Enrolment.create({
+    const enrollment = await Enrollment.create({
       student: studentId,
       course: courseId,
       teacher: course.teacher,
@@ -216,10 +230,11 @@ async function studentSelfRegistration(req, res) {
 }
 
 // Get teacher's students (Teacher only)
+// Get teacher's students (Teacher only)
 async function getTeacherStudents(req, res) {
   try {
-    const teacherId = req.user.id;
-    const enrollments = await Enrolment.find({ teacher: teacherId })
+    const teacherId = req.user._id;
+    const enrollments = await Enrollment.find({ teacher: teacherId })
       .populate("student", "name email phone")
       .populate("course", "courseName courseCode")
       .populate("campus", "name")
@@ -234,11 +249,12 @@ async function getTeacherStudents(req, res) {
   }
 }
 
+
 // Get student's courses (Student only)
 async function getStudentCourses(req, res) {
   try {
-    const studentId = req.user.id;
-    const enrollments = await Enrolment.find({ student: studentId })
+    const studentId = req.user._id;
+    const enrollments = await Enrollment.find({ student: studentId })
       .populate(
         "course",
         "courseName courseCode courseDescription timings days"
@@ -259,7 +275,7 @@ async function getStudentCourses(req, res) {
 // Get courses by teacher (Teacher only)
 async function getCoursesByTeacher(req, res) {
   try {
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
     const courses = await courseModel
       .find({ teacher: teacherId })
       .populate("createdBy", "name")
