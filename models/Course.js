@@ -37,8 +37,8 @@ const courseSchema = mongoose.Schema({
     students: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }
+            ref: 'User',
+        },
     ],
     status: {
         type: Boolean,
