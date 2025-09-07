@@ -36,18 +36,14 @@ exports.register = async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id, user.role);
-    return res.status(201).json({
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      token,
-      success: true,
-      message: "Registration successful",
-    });
+    const user = await User.create(userData);
+    const data = user.toObject();
+    delete data.password;
+
+    
+    const token = generateToken(data._id, data.role);
+
+    return res.status(201).json({ user: data, token });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
