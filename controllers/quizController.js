@@ -1,6 +1,6 @@
 const Quiz = require("../models/QuizSechema");
 const parseCSVFile = require("../utils/parseCSVFile");
-const Enrollment = require("../models/Enrollment");
+const Enrollment = require("../models/StudentEnrollment");
 
 exports.getAllQuizzes = async (req, res) => {
   try {

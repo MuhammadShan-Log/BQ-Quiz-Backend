@@ -1,42 +1,45 @@
 const mongoose = require("mongoose");
 
-const enrollmentSchema = new mongoose.Schema({
+const studentEnrollmentSchema = new mongoose.Schema({
   student: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "User",
-    required: true
+    required: true,
   },
   course: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "Course",
-    required: true
+    required: true,
   },
   teacher: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "User",
-    required: true
+    required: true,
   },
   campus: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "Campus",
-    // required: true
+    required: true,
   },
   enrollmentDate: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   status: {
     type: String,
-    enum: ['active', 'completed', 'dropped'],
-    default: 'active'
+    enum: ["active", "completed", "dropped"],
+    default: "active",
   },
   isActive: {
     type: Boolean,
-    default: true
-  }
+    default: true,
+  },
 }, { timestamps: true });
 
-// Compound index to prevent duplicate enrollments
-enrollmentSchema.index({ student: 1, course: 1 }, { unique: true });
+studentEnrollmentSchema.index(
+  { student: 1, course: 1, teacher: 1, campus: 1 }, 
+  { unique: true }
+);
 
-module.exports = mongoose.model("Enrollment", enrollmentSchema);
+const StudentEnrollment = mongoose.model("StudentEnrollment", studentEnrollmentSchema);
+module.exports = StudentEnrollment;

@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-const Enrollment = require("../models/Enrollment");
+const Enrollment = require("../models/StudentEnrollment");
 const Course = require("../models/Course");
 
 const generateToken = (userId, role) => {

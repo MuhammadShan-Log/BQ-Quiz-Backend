@@ -1,6 +1,6 @@
 // controllers/course.controller.js
 const courseModel = require("../models/Course");
-const Enrollment = require("../models/Enrollment");
+const Enrollment = require("../models/StudentEnrollment");
 const User = require("../models/User");
 const { default: mongoose } = require("mongoose");
 

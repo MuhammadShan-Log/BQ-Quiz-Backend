@@ -1,8 +1,19 @@
 const mongoose = require("mongoose");
 
 const campusSchema = new mongoose.Schema({
-  name: String,
-  location: String
-});
+  name: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+  status: {
+    type: Boolean,
+    default: true,
+  }
+}, { timestamps: true });
 
-module.exports = mongoose.model("Campus", campusSchema);
+const Campus = mongoose.model("Campus", campusSchema);
+module.exports = Campus;
