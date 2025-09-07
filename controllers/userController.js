@@ -16,7 +16,7 @@ exports.register = async (req, res) => {
     if (existUser)
       return res.status(400).json({ error: "Email Already Registered!" });
 
-    const user = await User.create({ name, phone, email, password, role });
+    let user = await User.create({ name, phone, email, password, role });
 
     // Auto-enroll student if course selected at signup
     if (user.role === "student" && enrollmentCourseID) {
@@ -36,7 +36,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    const user = await User.create(userData);
+    // const user = await User.create(userData);
     const data = user.toObject();
     delete data.password;
 
