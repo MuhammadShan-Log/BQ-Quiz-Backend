@@ -11,7 +11,14 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 require("./config/db_connection");
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: ["https://bq-quiz-frontend.vercel.app", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
+  credentials: true
+}));
+
+app.options("*", cors());
 
 app.use("/auth", authRoutes);
 app.use("/course", courseRoutes);
