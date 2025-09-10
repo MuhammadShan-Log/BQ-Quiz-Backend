@@ -18,8 +18,6 @@ app.use(cors({
   credentials: true
 }));
 
-app.options("*", cors());
-
 app.use("/auth", authRoutes);
 app.use("/course", courseRoutes);
 app.use("/quizzes", quizRoutes);

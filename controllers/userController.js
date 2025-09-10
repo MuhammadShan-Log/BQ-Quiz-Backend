@@ -1,7 +1,5 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-const Enrollment = require("../models/StudentEnrollment");
-const Course = require("../models/Course");
 
 const generateToken = (userId, role) => {
   return jwt.sign({ id: userId, role }, process.env.SECRET, {
@@ -11,47 +9,27 @@ const generateToken = (userId, role) => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, phone, email, password, role, enrollmentCourseID } = req.body;
+    const { name, phone, email, password, role } = req.body;
+
+    if (role === "admin" && (!req.user || req.user.role !== "admin")) {
+      return res.status(403).json({ error: "Only admin can create admins" });
+    }
+
+    // if (["teacher", "student"].includes(role) && (!req.user || req.user.role !== "admin")) {
+    //   return res.status(403).json({ error: "Only admin can register teachers/students" });
+    // }
+
     const existUser = await User.findOne({ email });
-    if (existUser)
-      return res.status(400).json({ error: "Email Already Registered!" });
+    if (existUser) return res.status(400).json({ error: "Email already registered!" });
 
     const user = await User.create({ name, phone, email, password, role });
 
-    // Auto-enroll student if course selected at signup
-    if (user.role === "student" && enrollmentCourseID) {
-      const course = await Course.findById(enrollmentCourseID);
-      if (!course) {
-        return res.status(400).json({ error: "Selected course not found." });
-      }
-      if (!course.teacher) {
-        return res.status(400).json({ error: "Course must have a teacher assigned before enrollment." });
-      }
-
-      // Create enrollment if not already exists (unique index also protects)
-      await Enrollment.create({
-        student: user._id,
-        course: course._id,
-        teacher: course.teacher,
-      });
-    }
-
-    const token = generateToken(user._id, user.role);
-    return res.status(201).json({
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      token,
-      success: true,
-      message: "Registration successful",
-    });
+    return res.status(201).json({ message: "User created successfully", user });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
 };
+
 
 exports.login = async (req, res) => {
   try {
@@ -107,25 +85,22 @@ exports.getStudentWithCourse = async (req, res) => {
   }
 }
 
-// FOR FETCHING ALL STUDENTS TO ADMIN PAGE
 exports.getAllStudents = async (req, res) => {
   try {
-    let filter = { role: "student" }
-    if (req.user.role === "teacher"){
-      filter.enrollmentCourseID = req.user.enrollmentCourseID
+    if (req.user.role === "teacher") {
+      const enrollments = await StudentEnrollment.find({ teacher: req.user._id })
+        .populate("student", "name email phone")
+      return res.json({ status: 200, data: enrollments.map(e => e.student) });
     }
-    const students = await User.find(filter)
-    return res.json({
-      status: 200,
-      data: students,
-      error: null
-    })
+    
+    const students = await User.find({ role: "student" });
+    return res.json({ status: 200, data: students });
   } catch (error) {
-    return res.status(500).json({ error: error.message })
+    return res.status(500).json({ error: error.message });
   }
-}
+};
 
-// FOR FETCHING ALL TEACHERS TO ADMIN PAGE
+
 exports.getAllTeachers = async (req, res) => {
   try {
     const teachers = await User.find({ role: "teacher" })
@@ -135,7 +110,6 @@ exports.getAllTeachers = async (req, res) => {
   }
 }
 
-// FOR FETCHING ALL USERS BY ROLE
 exports.getUsersByRole = async (req, res) => {
   try {
     const { role } = req.params;

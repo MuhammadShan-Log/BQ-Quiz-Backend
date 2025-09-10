@@ -1,299 +1,189 @@
-// controllers/course.controller.js
-const courseModel = require("../models/Course");
-const Enrollment = require("../models/StudentEnrollment");
+const Course = require("../models/Course");
+const StudentEnrollment = require("../models/StudentEnrollment");
+const TeacherAssignment = require("../models/TeacherAssignment");
 const User = require("../models/User");
-const { default: mongoose } = require("mongoose");
+const Campus = require("../models/Campus");
 
 async function getAllCourses(req, res) {
   try {
     let filter = { isDeleted: false };
 
-    if (req?.user?.role === "teacher") {
-      filter.teacher = new mongoose.Types.ObjectId(req.user._id);
-    }
-
-    const data = await courseModel
-      .find(filter)
-      .populate("teacher", "name email")
+    const courses = await Course.find(filter)
+      .populate("createdBy", "name email")
       .lean();
 
-    console.log("Courses found:", data);
-
-    return res
-      .status(200)
-      .json({ status: 200, message: "", data, error: null });
+    return res.status(200).json({ status: 200, data: courses });
   } catch (error) {
     console.error("getAllCourses error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ error: "Server error." });
   }
 }
 
 async function addNewCourse(req, res) {
   try {
-    const data = await courseModel.create(req.body);
-    return res.status(200).json({
-      status: 200,
-      message: "Course added successfully!",
-      data,
-      error: null,
-    });
+    const course = await Course.create(req.body);
+    return res
+      .status(200)
+      .json({ message: "Course added successfully!", data: course });
   } catch (error) {
     console.error("addNewCourse error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ error: "Server error." });
   }
 }
 
 async function getCourseById(req, res) {
   try {
-    const data = await courseModel
-      .findById(req.params.id)
-      .populate("teacher", "name email")
+    const course = await Course.findById(req.params.id)
+      .populate("createdBy", "name email")
       .lean();
-    if (!data)
-      return res.status(404).json({ status: 404, error: "Course not found." });
-    return res
-      .status(200)
-      .json({ status: 200, message: "", data, error: null });
+    if (!course) return res.status(404).json({ error: "Course not found." });
+    return res.status(200).json({ data: course });
   } catch (error) {
     console.error("getCourseById error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ error: "Server error." });
   }
 }
 
 async function updateCourseById(req, res) {
   try {
-    const data = await courseModel.findByIdAndUpdate(req.params.id, req.body, {
+    const updated = await Course.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
-    if (!data)
-      return res.status(404).json({ status: 404, error: "Course not found." });
-    return res.status(200).json({
-      status: 200,
-      message: "Course updated successfully!",
-      data,
-      error: null,
-    });
+    if (!updated) return res.status(404).json({ error: "Course not found." });
+    return res
+      .status(200)
+      .json({ message: "Course updated successfully!", data: updated });
   } catch (error) {
     console.error("updateCourseById error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ error: "Server error." });
   }
 }
 
 async function deleteCourseById(req, res) {
   try {
-    const data = await courseModel.findByIdAndUpdate(
+    const deleted = await Course.findByIdAndUpdate(
       req.params.id,
       { isDeleted: true },
       { new: true }
     );
-    if (!data)
-      return res.status(404).json({ status: 404, error: "Course not found." });
-    return res.status(200).json({
-      status: 200,
-      message: "Course deleted successfully (soft delete).",
-      data,
-      error: null,
-    });
+    if (!deleted) return res.status(404).json({ error: "Course not found." });
+    return res.status(200).json({ message: "Course deleted" });
   } catch (error) {
     console.error("deleteCourseById error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ error: "Server error." });
   }
 }
 
-// Assign teacher to course (Admin only)
 async function assignTeacherToCourse(req, res) {
   try {
-    const { courseId, teacherId } = req.body;
-
-    // Validate IDs FIRST to avoid cast errors
-    if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(teacherId)) {
-      return res.status(400).json({ error: "Invalid courseId or teacherId" });
-    }
-
-    const exists = await courseModel.exists({ _id: courseId });
-    if (!exists) return res.status(404).json({ error: "Course Not Found!" });
+    const { courseId, teacherId, campusId } = req.body;
 
     const teacher = await User.findById(teacherId);
     if (!teacher || teacher.role !== "teacher") {
-      return res.status(400).json({ error: "Invalid teacher ID or user is not a teacher." });
+      return res.status(400).json({ error: "Invalid teacher ID." });
     }
 
-    // Atomic update without triggering full validation on unrelated required fields
-    const updated = await courseModel.findByIdAndUpdate(
-      courseId,
-      { $set: { teacher: teacherId } },
-      { new: true, runValidators: false }
-    ).populate("teacher", "name email");
+    const course = await Course.findById(courseId);
+    if (!course) return res.status(404).json({ error: "Course not found." });
 
-    return res.json({ message: "Course assigned successfully", course: updated });
+    const campus = await Campus.findById(campusId);
+    if (!campus) return res.status(404).json({ error: "Campus not found." });
+
+    const assignment = await TeacherAssignment.create({
+      teacher: teacherId,
+      course: courseId,
+      campus: campusId,
+    });
+
+    return res
+      .status(200)
+      .json({ message: "Teacher assigned successfully!" });
   } catch (error) {
     console.error("assignTeacherToCourse error:", error);
-    return res.status(500).json({ status: 500, error: error.message || "Server error." });
+    return res.status(500).json({ error: error.message });
   }
 }
 
-// Assign student to course (Admin only)
 async function assignStudentToCourse(req, res) {
   try {
-    const { studentId, courseId, campusId } = req.body;
-
-    const course = await courseModel.findById(courseId);
-    if (!course) {
-      return res.status(404).json({ status: 404, error: "Course not found." });
-    }
-
-    if (!course.teacher) {
-      return res.status(400).json({
-        status: 400,
-        error: "Course must have a teacher assigned first.",
-      });
-    }
+    const { studentId, courseId, teacherId, campusId } = req.body;
 
     const student = await User.findById(studentId);
     if (!student || student.role !== "student") {
-      return res.status(400).json({
-        status: 400,
-        error: "Invalid student ID or user is not a student.",
-      });
+      return res.status(400).json({ error: "Invalid student ID." });
     }
 
-    // Check if already enrolled
-    const existingEnrollment = await Enrollment.findOne({
-      student: studentId,
+    const assignment = await TeacherAssignment.findOne({
+      teacher: teacherId,
       course: courseId,
+      campus: campusId,
+      status: "active",
     });
-    if (existingEnrollment) {
-      return res.status(400).json({
-        status: 400,
-        error: "Student is already enrolled in this course.",
-      });
+    if (!assignment) {
+      return res
+        .status(400)
+        .json({ error: "Teacher is not assigned to this course at this campus." });
     }
 
-    // Create enrollment
-    const enrollment = await Enrollment.create({
+    const enrollment = await StudentEnrollment.create({
       student: studentId,
       course: courseId,
-      teacher: course.teacher,
-      // campus: campusId || null,
+      teacher: teacherId,
+      campus: campusId,
     });
 
-    return res.status(200).json({
-      status: 200,
-      message: "Student enrolled to course successfully.",
-      data: enrollment,
-      error: null,
-    });
+    return res
+      .status(200)
+      .json({ message: "Student enrolled successfully!"});
   } catch (error) {
     console.error("assignStudentToCourse error:", error);
-    return res.status(500).json({ status: 500, error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 }
 
-// Student self-registration to course
-async function studentSelfRegistration(req, res) {
-  try {
-    const { courseId, campusId } = req.body;
-    const studentId = req.user._id;
-
-    const course = await courseModel.findById(courseId);
-    if (!course)
-      return res.status(404).json({ status: 404, error: "Course not found." });
-
-    if (!course.teacher) {
-      return res.status(400).json({
-        status: 400,
-        error: "Course must have a teacher assigned first.",
-      });
-    }
-
-    const existingEnrollment = await Enrollment.findOne({
-      student: studentId,
-      course: courseId,
-    });
-    if (existingEnrollment) {
-      return res.status(400).json({
-        status: 400,
-        error: "You are already enrolled in this course.",
-      });
-    }
-
-    const enrollment = await Enrollment.create({
-      student: studentId,
-      course: courseId,
-      teacher: course.teacher,
-      campus: campusId || null,
-    });
-
-    return res.status(200).json({
-      status: 200,
-      message: "Successfully enrolled to course.",
-      data: enrollment,
-      error: null,
-    });
-  } catch (error) {
-    console.error("studentSelfRegistration error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
-  }
-}
-
-// Get teacher's students (Teacher only)
-// Get teacher's students (Teacher only)
 async function getTeacherStudents(req, res) {
   try {
     const teacherId = req.user._id;
-    const enrollments = await Enrollment.find({ teacher: teacherId })
+    const enrollments = await StudentEnrollment.find({ teacher: teacherId })
       .populate("student", "name email phone")
       .populate("course", "courseName courseCode")
-      .populate("campus", "name")
+      .populate("campus", "name location")
       .lean();
 
-    return res
-      .status(200)
-      .json({ status: 200, message: "", data: enrollments, error: null });
+    return res.status(200).json({ data: enrollments });
   } catch (error) {
     console.error("getTeacherStudents error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ error: "Server error." });
   }
 }
 
-
-// Get student's courses (Student only)
 async function getStudentCourses(req, res) {
   try {
     const studentId = req.user._id;
-    const enrollments = await Enrollment.find({ student: studentId })
-      .populate(
-        "course",
-        "courseName courseCode courseDescription timings days"
-      )
+    const enrollments = await StudentEnrollment.find({ student: studentId })
+      .populate("course", "courseName courseCode courseDescription timings days")
       .populate("teacher", "name email")
-      .populate("campus", "name")
+      .populate("campus", "name location")
       .lean();
 
-    return res
-      .status(200)
-      .json({ status: 200, message: "", data: enrollments, error: null });
+    return res.status(200).json({ data: enrollments });
   } catch (error) {
     console.error("getStudentCourses error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ error: "Server error." });
   }
 }
 
-// Get courses by teacher (Teacher only)
 async function getCoursesByTeacher(req, res) {
   try {
     const teacherId = req.user._id;
-    const courses = await courseModel
-      .find({ teacher: teacherId })
-      .populate("createdBy", "name")
+    const assignments = await TeacherAssignment.find({ teacher: teacherId })
+      .populate("course", "courseName courseCode courseDescription")
+      .populate("campus", "name location")
       .lean();
 
-    return res
-      .status(200)
-      .json({ status: 200, message: "", data: courses, error: null });
+    return res.status(200).json({ data: assignments });
   } catch (error) {
-    console.error("getCoursesByTeacher error:", error);
-    return res.status(500).json({ status: 500, error: "Server error." });
+    return res.status(500).json({ error: error.message });
   }
 }
 
@@ -305,8 +195,7 @@ module.exports = {
   deleteCourseById,
   assignTeacherToCourse,
   assignStudentToCourse,
-  studentSelfRegistration,
   getTeacherStudents,
   getStudentCourses,
-  getCoursesByTeacher,
+  getCoursesByTeacher       
 };
