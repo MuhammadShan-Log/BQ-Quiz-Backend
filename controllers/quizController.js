@@ -46,7 +46,7 @@ exports.createQuiz = async (req, res) => {
 
     const questions = await parseCSVFile(req.file.path);
 
-    let { title, customQuestions } = req.body;
+    let { title, customQuestions, duration } = req.body;
 
     if (customQuestions) {
       if (typeof customQuestions === "string") {
@@ -67,6 +67,7 @@ exports.createQuiz = async (req, res) => {
       title,
       questions,
       customQuestions,
+      duration,
       createdBy: req.user.id,
     });
 
@@ -83,7 +84,7 @@ exports.updateQuiz = async (req, res) => {
         .status(403)
         .json({ message: "Only teachers can update quizzes" });
 
-    let { title, questions, customQuestions } = req.body;
+    let { title, questions, customQuestions,duration } = req.body;
 
     const quiz = await Quiz.findById(req.params.id);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
@@ -94,6 +95,7 @@ exports.updateQuiz = async (req, res) => {
         .json({ message: "Not authorized to update this quiz" });
 
     if (title) quiz.title = title;
+    if (duration) quiz.duration = duration;
 
     if (customQuestions) {
       if (typeof customQuestions === "string") {

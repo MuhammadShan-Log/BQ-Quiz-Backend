@@ -1,4 +1,3 @@
-// models/Quiz.js
 const mongoose = require("mongoose");
 
 const questionSchema = new mongoose.Schema({
@@ -17,7 +16,11 @@ const quizSchema = new mongoose.Schema(
     title: { type: String, required: true },
     questions: [questionSchema],
     customQuestions: [{ type: String }],
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // teacher id
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    duration: {
+      type: Number, 
+      required: true,
+    },
   },
   { timestamps: true }
 );
