@@ -1,6 +1,6 @@
 const Quiz = require("../models/QuizSechema");
 const parseCSVFile = require("../utils/parseCSVFile");
-const Enrollment = require("../models/Enrollment");
+const Enrollment = require("../models/StudentEnrollment");
 
 exports.getAllQuizzes = async (req, res) => {
   try {
@@ -9,7 +9,9 @@ exports.getAllQuizzes = async (req, res) => {
     if (req.user.role === "teacher") {
       filter.createdBy = req.user.id;
     } else if (req.user.role === "student") {
-      const enrollments = await Enrollment.find({ student: req.user._id }).select("teacher");
+      const enrollments = await Enrollment.find({
+        student: req.user._id,
+      }).select("teacher");
       const teacherIds = enrollments.map((e) => e.teacher).filter(Boolean);
       if (teacherIds.length === 0) {
         return res.json([]);
@@ -17,8 +19,17 @@ exports.getAllQuizzes = async (req, res) => {
       filter.createdBy = { $in: teacherIds };
     }
 
-    const quizzes = await Quiz.find(filter);
-    return res.json(quizzes);
+    const quizzes = await Quiz.find(filter)
+      .select("title duration createdBy")
+      .populate("createdBy", "name");
+
+    const response = quizzes.map((q) => ({
+      title: q.title.trim(),
+      duration: q.duration,
+      createdBy: q.createdBy?.name || "Unknown",
+    }));
+
+    return res.json(response);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -46,7 +57,7 @@ exports.createQuiz = async (req, res) => {
 
     const questions = await parseCSVFile(req.file.path);
 
-    let { title, customQuestions } = req.body;
+    let { title, customQuestions, duration } = req.body;
 
     if (customQuestions) {
       if (typeof customQuestions === "string") {
@@ -67,10 +78,11 @@ exports.createQuiz = async (req, res) => {
       title,
       questions,
       customQuestions,
+      duration,
       createdBy: req.user.id,
     });
 
-    res.status(201).json({ message: "Quiz created", quiz });
+    res.status(201).json({ message: "Quiz created successfully!" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -83,7 +95,7 @@ exports.updateQuiz = async (req, res) => {
         .status(403)
         .json({ message: "Only teachers can update quizzes" });
 
-    let { title, questions, customQuestions } = req.body;
+    let { title, questions, customQuestions, duration } = req.body;
 
     const quiz = await Quiz.findById(req.params.id);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
@@ -94,6 +106,7 @@ exports.updateQuiz = async (req, res) => {
         .json({ message: "Not authorized to update this quiz" });
 
     if (title) quiz.title = title;
+    if (duration) quiz.duration = duration;
 
     if (customQuestions) {
       if (typeof customQuestions === "string") {
@@ -128,7 +141,7 @@ exports.updateQuiz = async (req, res) => {
 
     await quiz.save();
 
-    res.json({ message: "Quiz updated successfully", quiz });
+    res.json({ message: "Quiz updated successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

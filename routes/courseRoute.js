@@ -7,7 +7,6 @@ const {
   deleteCourseById,
   assignTeacherToCourse,
   assignStudentToCourse,
-  studentSelfRegistration,
   getTeacherStudents,
   getStudentCourses,
   getCoursesByTeacher
@@ -37,6 +36,5 @@ router.get('/teacher/courses', protect, authMiddleware(['teacher']), getCoursesB
 
 // Student routes
 router.get('/student/courses', protect, authMiddleware(['student']), getStudentCourses)
-router.post('/student/enroll', protect, authMiddleware(['student']), studentSelfRegistration)
 
 module.exports = router

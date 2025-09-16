@@ -1,5 +1,5 @@
 const Quiz = require("../models/QuizSechema");
-const Enrolment = require("../models/Enrollment");
+const Enrolment = require("../models/StudentEnrollment");
 const Course = require("../models/Course");
 const User = require("../models/User");
 const Attempt = require("../models/Attempt");
