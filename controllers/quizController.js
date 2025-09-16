@@ -9,7 +9,9 @@ exports.getAllQuizzes = async (req, res) => {
     if (req.user.role === "teacher") {
       filter.createdBy = req.user.id;
     } else if (req.user.role === "student") {
-      const enrollments = await Enrollment.find({ student: req.user._id }).select("teacher");
+      const enrollments = await Enrollment.find({
+        student: req.user._id,
+      }).select("teacher");
       const teacherIds = enrollments.map((e) => e.teacher).filter(Boolean);
       if (teacherIds.length === 0) {
         return res.json([]);
@@ -18,7 +20,7 @@ exports.getAllQuizzes = async (req, res) => {
     }
 
     const quizzes = await Quiz.find(filter);
-    return res.json(quizzes);
+    return res.json({ quizTitles: quizzes.title, duration });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -71,7 +73,7 @@ exports.createQuiz = async (req, res) => {
       createdBy: req.user.id,
     });
 
-    res.status(201).json({ message: "Quiz created", quiz });
+    res.status(201).json({ message: "Quiz created" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -84,7 +86,7 @@ exports.updateQuiz = async (req, res) => {
         .status(403)
         .json({ message: "Only teachers can update quizzes" });
 
-    let { title, questions, customQuestions,duration } = req.body;
+    let { title, questions, customQuestions, duration } = req.body;
 
     const quiz = await Quiz.findById(req.params.id);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
@@ -130,7 +132,7 @@ exports.updateQuiz = async (req, res) => {
 
     await quiz.save();
 
-    res.json({ message: "Quiz updated successfully", quiz });
+    res.json({ message: "Quiz updated successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
