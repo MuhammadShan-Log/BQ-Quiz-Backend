@@ -19,8 +19,17 @@ exports.getAllQuizzes = async (req, res) => {
       filter.createdBy = { $in: teacherIds };
     }
 
-    const quizzes = await Quiz.find(filter);
-    return res.json({ quizTitles: quizzes.title, duration });
+    const quizzes = await Quiz.find(filter)
+      .select("title duration createdBy")
+      .populate("createdBy", "name");
+
+    const response = quizzes.map((q) => ({
+      title: q.title.trim(),
+      duration: q.duration,
+      createdBy: q.createdBy?.name || "Unknown",
+    }));
+
+    return res.json(response);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -73,7 +82,7 @@ exports.createQuiz = async (req, res) => {
       createdBy: req.user.id,
     });
 
-    res.status(201).json({ message: "Quiz created" });
+    res.status(201).json({ message: "Quiz created successfully!" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
